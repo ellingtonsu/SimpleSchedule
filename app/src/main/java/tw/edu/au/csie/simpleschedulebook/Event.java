@@ -6,6 +6,9 @@ package tw.edu.au.csie.simpleschedulebook;
 
 public class Event {
 
+    final static int TYPE_PRIVATE = 0;
+    final static int TYPE_PUBLIC = 1;
+
     int mId;
     String mEvent;
     String mDatetime;

@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -40,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
 
         mItemList = new ArrayList<Event>();
 
+        db = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READWRITE);
+
         Cursor c = db.rawQuery("SELECT * FROM schedule", null);
         c.moveToFirst();
         while(!c.isAfterLast()) {
@@ -61,15 +64,12 @@ public class MainActivity extends AppCompatActivity {
         //Open your local db as the input stream
         InputStream myInput = getApplicationContext().getAssets().open("scheduleDb");
 
-        // Path to the just created empty db
-        String dbPath = getApplicationContext().getDatabasePath("").getPath();
-        Toast.makeText(this,dbPath,Toast.LENGTH_LONG).show();
-
-        File dbDir = new File(dbPath);
+        //Check if databases dir exists. If not, create it.
+        String dbDirPath = dbPath.substring(0,dbPath.length() - "scheduleDB".length());
+        File dbDir = new File(dbDirPath);
         if(!dbDir.exists())
             dbDir.mkdir();
 
-        dbPath = getApplicationContext().getDatabasePath("scheduleDb").getPath();
         File outFileName = getDatabasePath(dbPath);
 
         //Open the empty db as the output stream
@@ -93,22 +93,22 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        dbPath = getApplicationContext().getDatabasePath("scheduleDb").getPath();
-
         mListView = (ListView)findViewById(R.id.lv);
         registerForContextMenu(mListView);
 
-        try {
-            db = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READWRITE);
-        } catch(SQLiteException e) {
+        dbPath = getApplicationContext().getDatabasePath("scheduleDb").getAbsolutePath();
+
+        if(!getApplicationContext().getDatabasePath("scheduleDb").exists()) {
             try {
                 copyDataBase();
+                Log.i("DB",dbPath);
                 db = SQLiteDatabase.openDatabase(dbPath, null, SQLiteDatabase.OPEN_READWRITE);
-            } catch (IOException e1) {
-                Toast.makeText(this, "Copy Database Failed", Toast.LENGTH_LONG).show();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
+
     }
 
     @Override
@@ -134,7 +134,6 @@ public class MainActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.add_event:
-                //Toast.makeText(this,"ADD",Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(MainActivity.this, EventDetail.class);
                 intent.putExtra("ACTION", ACTION_INSERT);
                 startActivity(intent);
@@ -161,7 +160,6 @@ public class MainActivity extends AppCompatActivity {
         switch(item.getItemId())
         {
             case R.id.update:
-                //Toast.makeText(this,"UPDATE",Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(MainActivity.this, EventDetail.class);
                 intent.putExtra("ACTION", ACTION_UPDATE);
                 intent.putExtra("ID", id);
@@ -171,7 +169,6 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
                 break;
             case R.id.delete:
-                //Toast.makeText(this,"DELETE",Toast.LENGTH_SHORT).show();
                 String sql = String.format("DELETE FROM schedule WHERE id=%d", id);
                 db.execSQL(sql);
                 onDbUpdate();

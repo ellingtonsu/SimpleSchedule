@@ -29,11 +29,15 @@ public class EventDetail extends AppCompatActivity {
         mPublic = (RadioButton)findViewById(R.id.rb_public);
 
         Intent intent = getIntent();
+        final int action = intent.getIntExtra("ACTION", 0);
 
-        if(intent.getIntExtra("ACTION",0) == MainActivity.ACTION_UPDATE){
-            mEvent.setText(intent.getStringExtra("EVENT"));
-            mDateTime.setText(intent.getStringExtra("DATETIME"));
-            if(intent.getIntExtra("TYPE", 0) == 0) {
+        if(action == MainActivity.ACTION_UPDATE){
+            String event = intent.getStringExtra("EVENT");
+            String datetime = intent.getStringExtra("DATETIME");
+            int type = intent.getIntExtra("TYPE", 0);
+            mEvent.setText(event);
+            mDateTime.setText(datetime);
+            if(type == Event.TYPE_PRIVATE) {
                 mPrivate.setChecked(true);
             } else {
                 mPublic.setChecked(true);
@@ -47,11 +51,19 @@ public class EventDetail extends AppCompatActivity {
                 String event = mEvent.getText().toString();
                 String datetime = mDateTime.getText().toString();
                 int type = 0;
-                if(mPrivate.isChecked()) type = 0;
-                else if(mPublic.isChecked()) type = 1;
+                if (mPrivate.isChecked()) type = 0;
+                else if (mPublic.isChecked()) type = 1;
 
                 SQLiteDatabase db = openOrCreateDatabase("scheduleDb", Context.MODE_PRIVATE, null);
-                String sql = String.format("INSERT INTO schedule (event,datetime,type) VALUES('%s','%s',%d)",event,datetime,type);
+
+                String sql = "";
+                if (action == MainActivity.ACTION_INSERT) {
+                    sql = String.format("INSERT INTO schedule (event,datetime,type) VALUES('%s','%s',%d)", event, datetime, type);
+                } else {
+                    int id = getIntent().getIntExtra("ID", -1);
+                    sql = String.format("UPDATE schedule SET event='%s',datetime='%s',type=%d WHERE id=%d", event, datetime, type, id);
+                }
+
                 db.execSQL(sql);
                 db.close();
                 finish();
